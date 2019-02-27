@@ -1,0 +1,18 @@
+plugins {
+    id "com.github.johnrengelman.shadow" version "4.0.2"
+}
+
+apply plugin: 'application'
+
+run.jvmArgs('-noverify', '-XX:TieredStopAtLevel=1')
+
+mainClassName = "info.digitalpoet.auth.micronaut.Application"
+
+shadowJar {
+    mergeServiceFiles()
+}
+
+tasks.withType(JavaCompile) {
+    options.encoding = "UTF-8"
+    options.compilerArgs.add('-parameters')
+}

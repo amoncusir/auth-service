@@ -1,25 +1,128 @@
-plugins {
-    id 'java'
-    id 'org.jetbrains.kotlin.jvm' version '1.3.11'
+buildscript {
+
+    ext {
+        // Dependencies versions
+        kotlin_version = '1.3.20'
+        
+        spring_dependency_management = '1.0.6.RELEASE'
+    }
+
+    repositories {
+        mavenCentral()
+        jcenter()
+
+        maven { url 'https://plugins.gradle.org/m2/' }
+    }
+
+    dependencies {
+        // Kotlin plugins
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlin_version}")
+        classpath("org.jetbrains.kotlin:kotlin-allopen:${kotlin_version}")
+    
+        // Spring Dependency management plugins
+        classpath("io.spring.gradle:dependency-management-plugin:${spring_dependency_management}")
+    }
 }
 
-group 'info.digitalpoet.service.auth'
-version '0.0.1-SNAPSHOT'
+apply plugin: 'idea'
 
-sourceCompatibility = 1.8
+idea {
 
-repositories {
-    mavenCentral()
+    module {
+        downloadJavadoc = true
+        downloadSources = true
+    }
 }
 
-dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+configure(subprojects) {
+
+    apply plugin: 'java'
+    apply plugin: 'kotlin'
+    apply plugin: 'kotlin-kapt'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: "org.jetbrains.kotlin.plugin.allopen"
+
+    clean.doLast {
+        delete './old_build'
+        delete './out'
+    }
 }
 
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+allprojects {
+    //...
 }
-compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+
+subprojects {
+
+    group 'info.digitalpoet.service.auth'
+    version '0.0.1'
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    repositories {
+        mavenCentral()
+        jcenter()
+    }
+
+    dependencyManagement {
+        imports {
+            mavenBom 'io.micronaut:micronaut-bom:1.0.3'
+        }
+    }
+
+    dependencies {
+        // Kotlin Resources
+        implementation('org.jetbrains.kotlin:kotlin-reflect')
+        implementation('org.jetbrains.kotlin:kotlin-stdlib-jdk8')
+        
+        // Micronaut
+        implementation("io.micronaut:micronaut-http-client")
+        implementation("io.micronaut:micronaut-http-server-netty")
+        implementation("io.micronaut:micronaut-runtime")
+
+        kapt "io.micronaut:micronaut-inject-java"
+        kapt "io.micronaut:micronaut-validation"
+        kaptTest "io.micronaut:micronaut-inject-java"
+
+        runtime "ch.qos.logback:logback-classic:1.2.3"
+        runtime "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.7"
+
+        testImplementation "junit:junit:4.12"
+        testImplementation "io.micronaut:micronaut-inject-java"
+        testImplementation "org.hamcrest:hamcrest-all:1.3"
+        testImplementation "org.junit.jupiter:junit-jupiter-api:5.1.0"
+        testImplementation "org.jetbrains.spek:spek-api:1.1.5"
+
+        testRuntime "org.junit.jupiter:junit-jupiter-engine:5.1.0"
+        testRuntime "org.jetbrains.spek:spek-junit-platform-engine:1.1.5"
+    }
+
+    compileJava.dependsOn(processResources)
+
+    test {
+        useJUnitPlatform()
+    }
+
+    compileKotlin{
+
+        kotlinOptions {
+            freeCompilerArgs = ['-Xjsr305=strict']
+            javaParameters = true
+            jvmTarget = '1.8'
+        }
+    }
+
+    compileTestKotlin {
+
+        kotlinOptions {
+            freeCompilerArgs = ['-Xjsr305=strict']
+            javaParameters = true
+            jvmTarget = '1.8'
+        }
+    }
+
+    allOpen {
+        annotation("io.micronaut.aop.Around")
+    }
 }
